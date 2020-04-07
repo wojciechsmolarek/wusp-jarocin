@@ -3,13 +3,13 @@ if(isset($_POST['email'])) {
 
     header('Content-Type: text/html; charset=utf-8');
 
-    //  E-MAIL
     $email_to = "wojtasekc902@gmail.com";
     $email_subject = "Wiadomość ze strony wusp-jarocin.pl";
 
+	require_once('secret.php');
 
     function died($error) {
-        // your error code can go here
+
         echo "Wprowadzone dane sa niepoprawne ";
         die();
     }
@@ -29,6 +29,9 @@ if(isset($_POST['email'])) {
     $title = $_POST['title']; // required
     $text = $_POST['text']; // required
 
+	$check_captcha = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret='.$secret_key.'&response='.$_POST['g-recaptcha-response']);
+	$captcha_response = json_decode($check_captcha);
+
     $error_message = "";
     $email_exp = '/^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/';
   if(!preg_match($email_exp,$email)) {
@@ -44,6 +47,9 @@ if(isset($_POST['email'])) {
   if(strlen($text) < 2) {
     $error_message .= 'Wprowadź wiadomość.<br />';
   }
+  if ($captcha_response->success==false) {
+		$error_message .= 'Jesteś botem?';
+  }
   if(strlen($error_message) > 0) {
     died($error_message);
   }
@@ -58,7 +64,7 @@ if(isset($_POST['email'])) {
     $email_message .= "E-mail: ".clean_string($email)."\n";
     $email_message .= "Numer telefonu: ".clean_string($telephone)."\n";
     $email_message .= "Tytuł: ".clean_string($title)."\n";
-    $email_message .= "<b>Treść wiadomości:</b> ".clean_string($text)."\n";
+    $email_message .= "Treść wiadomości: ".clean_string($text)."\n";
 
 
 $send_mail = @mail($email_to, $email_subject, $email_message);
